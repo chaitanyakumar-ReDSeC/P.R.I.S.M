@@ -17,7 +17,7 @@ Developed by **Chaitanya Kumar Sathivada**
 </a>
 
 <p align="center">
-  <img src="https://github.com/chaitanyakumar-ReDSeC/assets/blob/main/general/image_assets/rainbow.png" width="100%">
+  <img src="https://github.com/chaitanyakumar-ReDSeC/assets/raw/main/general/image_assets/rainbow.png" width="100%">
 </p>
 
 ## Download the application for Windows
