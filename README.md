@@ -1,4 +1,4 @@
-# <img src="https://github.com/chaitanyakumar-ReDSeC/assets/raw/main/general/image_assets/ffmpeg-wrapper.png" height=35> FFmpeg Wrapper
+# <img src="https://github.com/chaitanyakumar-ReDSeC/assets/raw/main/general/image_assets/static/ffmpeg-wrapper.png" height=35> FFmpeg Wrapper
 
 <a href="https://github.com/chaitanyakumar-ReDSeC/ffmpeg-wrapper/releases/download/v1.0.0.0/FFmpeg.Wrapper.exe">
   <img src="https://github.com/chaitanyakumar-ReDSeC/assets/raw/main/projects_repo/ffmpeg-wrapper/ffmpeg-wrapper.png" alt="FFmpeg Wrapper Banner">
@@ -17,7 +17,7 @@ Developed by **Chaitanya Kumar Sathivada**
 </a>
 
 <p align="center">
-  <img src="https://github.com/chaitanyakumar-ReDSeC/assets/raw/main/general/image_assets/rainbow.png" width="100%">
+  <img src="https://github.com/chaitanyakumar-ReDSeC/assets/raw/main/general/image_assets/static/rainbow.png" width="100%">
 </p>
 
 ## Download the application for Windows
