@@ -18,7 +18,7 @@ import platform
 import tkinter as tk
 from tkinter import filedialog
 
-# --- COLOR PALETTE (S.A.V.E. COMPLIANT) ---
+# --- COLOR PALETTE ---
 RED = '\033[91m'
 WHITE = '\033[97m'
 CYAN = '\033[96m' 
@@ -143,24 +143,13 @@ def get_target_extension(source_file):
 
 # --- ENGINE LOGIC & UTILITIES ---
 
-def select_file():
+def select_file(title="Select Media Source File"):
     """Invokes headless tkinter filesystem dialogs to acquire target source."""
     root = tk.Tk()
     root.withdraw()
     file_path = filedialog.askopenfilename(
-        title="Select Media Source File",
-        filetypes=[("Media Files", "*.mkv *.mp4 *.avi *.mov *.mp3 *.wav *.m4a"), ("All Files", "*.*")]
-    )
-    root.destroy()
-    return file_path
-
-def select_sub():
-    """Invokes headless filesystem context loops specifically for mapping subtitles."""
-    root = tk.Tk()
-    root.withdraw()
-    file_path = filedialog.askopenfilename(
-        title="Select Subtitle Asset File",
-        filetypes=[("Subtitle Files", "*.srt *.ass *.vtt"), ("All Files", "*.*")]
+        title=title,
+        filetypes=[("All Supported Files", "*.mkv *.mp4 *.avi *.mov *.mp3 *.wav *.m4a *.srt *.ass *.vtt *.sup"), ("All Files", "*.*")]
     )
     root.destroy()
     return file_path
@@ -205,7 +194,6 @@ def resolve_output_path(source_file, target_dir, default_basename, extension):
     base_name = default_basename
     final_path = os.path.join(target_dir, f"{base_name}{extension}")
     
-    # Check structural directory match or direct string matches to prevent self-overwrite
     if os.path.dirname(os.path.abspath(source_file)) == os.path.abspath(target_dir) or os.path.exists(final_path):
         counter = 1
         while os.path.exists(os.path.join(target_dir, f"{base_name} ({counter}){extension}")):
@@ -309,43 +297,187 @@ def extract_tracks(input_file, metadata, current_path):
             
     input(f"\n {GRAY}Batch Processing completed. Press Enter to continue...{RESET}")
 
-def add_subtitle_track(video_file, current_path):
-    """Muxes external asset subtitle files directly into source targets."""
-    render_ui("Muxing Engine | Mapping External Assets", current_path)
-    print(f" {CYAN}>> Triggering system dialog to capture Subtitle Assets...{RESET}")
-    sub_file = select_sub()
-    if not sub_file: return
+def advanced_track_multiplexer(video_file, source_metadata, current_path):
+    """Multi-Asset Track Multiplexer System for mapping video/audio/subtitles with customized tags and MP4 safety patches."""
+    staged_assets = []  
+    source_streams = source_metadata.get('streams', [])
+    current_destination_index = len(source_streams)
 
-    lang = input(f"\n {CYAN}Language identifier string (e.g., eng, hin) [Default: eng] (// to back):\n >> {RESET}").strip()
-    if lang == '//': return
-    if not lang: lang = "eng"
-
-    render_ui("Muxing Engine | Configuring Container Format", current_path)
-    target_ext = get_target_extension(video_file)
-    if target_ext == "BACK": return
-
-    render_ui("Muxing Engine | Configuring Filename Parameters", current_path)
-    src_basename = os.path.splitext(os.path.basename(video_file))[0]
-    print(f" {GRAY}Leave blank/Press Enter to auto-default to source name: '{src_basename}'{RESET}")
-    out_name = input(f" {CYAN}Output track name (// to back):\n >> {RESET}").strip()
-    if out_name == '//': return
-    if not out_name: out_name = src_basename
-    
-    if out_name.lower().endswith(target_ext):
-        out_name = out_name[:-len(target_ext)]
-
-    final_path = resolve_output_path(video_file, current_path, out_name, target_ext)
-
-    cmd = [
-        'ffmpeg', '-hide_banner', '-i', video_file, '-i', sub_file,
-        '-map', '0', '-map', '1', '-c', 'copy', '-metadata:s:s:0', f'language={lang}', '-y', final_path
-    ]
-
-    print(f"\n {CYAN}>> Appending tracks into target media payload wrappers...{RESET}\n")
-    res = subprocess.run(cmd)
-    status = f"{GREEN}SUCCESS" if res.returncode == 0 else f"{RED}FAILURE"
-    print(f"\n {status} | Track updated layout stored at: {final_path}{RESET}")
-    input(f"\n {GRAY}Press Enter to continue...{RESET}")
+    while True:
+        render_ui("Muxing Engine | Multi-Asset Track Multiplexer", current_path)
+        print(f" {BOLD}SOURCE MATRIX STATE:{RESET}")
+        print(f" {GRAY}├─ Primary Target Source: {WHITE}{os.path.basename(video_file)}")
+        print(f" {GRAY}└─ Base Stream Count:     {WHITE}{len(source_streams)} tracks")
+        
+        if staged_assets:
+            print(f"\n {BOLD}STAGED EXTERNAL ATTACHMENTS PAYLOAD:{RESET}")
+            for a_idx, asset in enumerate(staged_assets):
+                print(f" {GRAY}├─ Asset [{a_idx}] File: {CYAN}{os.path.basename(asset['file_path'])}{RESET}")
+                for t in asset['tracks']:
+                    print(f" {GRAY}│  └─ Track #{t['internal_idx']} [{t['type'].upper()}] ➔ Destination Map Index: {GREEN}#{t['dest_idx']}{RESET}")
+                    print(f" {GRAY}│     ├── Title:    {WHITE}{t['title']}")
+                    print(f" {GRAY}│     └── Lang Code:{WHITE}{t['lang']}")
+        else:
+            print(f"\n {GRAY}No external assets currently queued for attachment.{RESET}")
+            
+        print("\n" + f" {BOLD}MULTIPLEXER OPERATIONS:{RESET}")
+        print(f" {GRAY}├─ [1] Choose & Stage External File Asset (Video / Audio / Subtitle)")
+        print(f" {GREEN}├─ [G] DISPATCH MULTIPLEX ENGINE PIPELINE (Mux and Write Options){RESET}")
+        print(f" {GRAY}└─ [//] Cancel Operations and Revert Back")
+        
+        choice = input(f"\n {CYAN}>> Selection: {RESET}").strip().lower()
+        if choice == '//':
+            break
+            
+        elif choice == '1':
+            render_ui("Multiplexer | Selection Interception System", current_path)
+            print(f" {CYAN}>> Activating file explorer dialog... Choose track asset.{RESET}")
+            asset_path = select_file(title="Select Asset Track to Merge")
+            if not asset_path: continue
+            
+            asset_path = os.path.abspath(asset_path)
+            asset_meta = get_metadata(asset_path)
+            asset_streams = asset_meta.get('streams', [])
+            
+            if not asset_streams:
+                # Handle text raw files like standalone .srt files which ffprobe handles differently or has empty stream array
+                ext = os.path.splitext(asset_path)[1].lower()
+                if ext in ['.srt', '.ass', '.vtt']:
+                    asset_streams = [{'codec_type': 'subtitle', 'codec_name': 'subrip' if ext == '.srt' else ext[1:], 'tags': {}}]
+                else:
+                    print(f"\n {RED}!! Error: Target asset file contains no valid parseable media tracks.{RESET}")
+                    time.sleep(2)
+                    continue
+                
+            render_ui("Multiplexer | Inspecting Track Components", current_path)
+            print(f" {BOLD}Target Asset: {WHITE}{os.path.basename(asset_path)}{RESET}\n")
+            print_stream_table(asset_streams)
+            
+            print(f"\n {GRAY}Choose stream index from this asset file to import. Leave blank / Press Enter to import ALL streams.{RESET}")
+            sel_idx_input = input(f" {CYAN}>> Asset track index input: {RESET}").strip()
+            
+            target_indices = []
+            if not sel_idx_input:
+                target_indices = list(range(len(asset_streams)))
+            else:
+                try:
+                    t_idx = int(sel_idx_input)
+                    if 0 <= t_idx < len(asset_streams):
+                        target_indices.append(t_idx)
+                    else:
+                        raise IndexError
+                except (ValueError, IndexError):
+                    print(f" {RED}Invalid tracking coordinate inside asset space.{RESET}")
+                    time.sleep(1.5)
+                    continue
+                    
+            asset_staged_tracks = []
+            for stream_idx in target_indices:
+                s = asset_streams[stream_idx]
+                stype = s.get('codec_type', 'unknown')
+                default_title = s.get('tags', {}).get('title', 'None')
+                default_lang = s.get('tags', {}).get('language', 'eng')
+                
+                render_ui(f"Staging Metadata | Asset Stream index #{stream_idx}", current_path)
+                print(f" {BOLD}Configuring Metadata Segment for asset track component:{RESET}")
+                print(f" {GRAY}├─ Target File:     {WHITE}{os.path.basename(asset_path)}")
+                print(f" {GRAY}├─ Component Type:  {CYAN}{stype.upper()}{RESET}")
+                print(f" {GRAY}└─ Current Title:   {WHITE}{default_title} [{default_lang}]\n")
+                
+                print(f" {GRAY}Leave blank to retain original track identity details.{RESET}")
+                new_title = input(f" {CYAN}Assign custom Title for this track component:\n >> {RESET}").strip()
+                if not new_title: new_title = default_title if default_title != 'None' else f"External {stype.capitalize()} Track"
+                
+                new_lang = input(f" {CYAN}Assign 3-letter language code framework (e.g., eng, ind, jpn):\n >> {RESET}").strip().lower()
+                if not new_lang: 
+                    new_lang = default_lang
+                elif len(new_lang) != 3:
+                    print(f" {RED}Warning: Invalid language length specification. Reverting to standard code validation [eng].{RESET}")
+                    new_lang = 'eng'
+                    time.sleep(1)
+                    
+                asset_staged_tracks.append({
+                    'internal_idx': stream_idx,
+                    'type': stype,
+                    'title': new_title,
+                    'lang': new_lang,
+                    'dest_idx': current_destination_index
+                })
+                current_destination_index += 1
+                
+            staged_assets.append({
+                'file_path': asset_path,
+                'tracks': asset_staged_tracks
+            })
+            
+        elif choice == 'g':
+            if not staged_assets:
+                print(f"\n {RED}!! Error: Staging payload array is empty. Attach tracks before dispatching.{RESET}")
+                time.sleep(1.5)
+                continue
+                
+            render_ui("Muxing Engine | Formatting Container Extension", current_path)
+            target_ext = get_target_extension(video_file)
+            if target_ext == "BACK": continue
+            
+            render_ui("Muxing Engine | Resolving Output Filename Target", current_path)
+            src_basename = os.path.splitext(os.path.basename(video_file))[0]
+            print(f" {GRAY}Leave blank/Press Enter to auto-default to source name: '{src_basename}'{RESET}")
+            out_name = input(f"\n {CYAN}Target output filename base:\n >> {RESET}").strip()
+            if not out_name: out_name = src_basename
+            
+            if out_name.lower().endswith(target_ext):
+                out_name = out_name[:-len(target_ext)]
+                
+            final_path = resolve_output_path(video_file, current_path, out_name, target_ext)
+            
+            # Assembly command architecture
+            cmd = ['ffmpeg', '-y', '-hide_banner', '-i', video_file]
+            for asset in staged_assets:
+                cmd.extend(['-i', asset['file_path']])
+                
+            # Maps base target structures
+            cmd.extend(['-map', '0'])
+            
+            # Explicitly maps independent target assets
+            for a_idx, asset in enumerate(staged_assets):
+                input_file_index = a_idx + 1
+                for t in asset['tracks']:
+                    cmd.extend(['-map', f'{input_file_index}:{t["internal_idx"]}'])
+                    
+            # Set default global copy command
+            cmd.extend(['-c', 'copy'])
+            
+            # MP4 CONTAINER SAFETY PATCH: Transcode text subtitles if destination is MP4
+            if target_ext.lower() == '.mp4':
+                for asset in staged_assets:
+                    for t in asset['tracks']:
+                        if t['type'].lower() == 'subtitle':
+                            cmd.extend([f'-c:s:{t["dest_idx"] - len(source_streams)}', 'mov_text'])
+            
+            # Direct target index injection mapping loops to deploy metadata modifications tracking
+            for asset in staged_assets:
+                for t in asset['tracks']:
+                    cmd.extend([f'-metadata:s:{t["dest_idx"]}', f'title={t["title"]}'])
+                    cmd.extend([f'-metadata:s:{t["dest_idx"]}', f'language={t["lang"]}'])
+                    
+            cmd.append(final_path)
+            
+            print(f"\n {CYAN}>> Compiling structural streams into single multi-track target payload wrapper...{RESET}\n")
+            
+            # Execute and capture stdout/stderr to dynamically print the error logs if it fails
+            res = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8')
+            
+            if res.returncode == 0:
+                print(f"\n {GREEN}[SUCCESS] Track architecture compilation complete! Pipeline resolved at:{RESET}")
+                print(f" {WHITE}{final_path}{RESET}")
+            else:
+                print(f"\n {RED}[FAILURE] Multiplexer pipeline execution structural failure.{RESET}")
+                print(f"\n{RED}{BOLD}FFMPEG ERROR LOG:{RESET}")
+                print(f"{GRAY}{res.stderr}{RESET}")
+                
+            input(f"\n {GRAY}Press Enter to return to main action selector menu...{RESET}")
+            break
 
 def manage_metadata_and_renaming(input_file, metadata, current_path):
     """ADVANCED STAGING ENGINE: Batch stages titles/languages modifications for multi-track processing in 1 pass."""
@@ -547,18 +679,18 @@ def run_prism():
     while True:
         render_ui("IDLE | Awaiting Target File Selection", current_path)
         print(f" {BOLD}MAIN ROUTER CONTROLLER MENU{RESET}")
-        print(f" {GRAY}├─ [1] Choose Target File Source\n ├─ [2] System Maintenance Configurations\n └─ [E] Terminate Session")
+        print(f" {GRAY}├─ [1] Choose Target File Source\n ├─ [2] Settings and Configurations\n └─ [E] Terminate Session")
         
         main_choice = input(f"\n {CYAN}>> Choice: {RESET}").strip().lower()
         if main_choice == 'e':
-            print(f"\n {GRAY}Terminating session logic matrices. Goodbye, Sir.{RESET}")
+            print(f"\n {GRAY}Terminating session.{RESET}")
             break
             
         elif main_choice == '2':
             while True:
-                render_ui("SYSTEM CONFIGURATION ENGINE", current_path)
+                render_ui("SETTINGS AND CONFIGURATIONS", current_path)
                 print(f" {BOLD}SETTINGS FRAMEWORK MENU{RESET}")
-                print(f" {GRAY}├─ [1] Alter Execution Directory Tracking Path\n ├─ [2] Deploy/Reinstall Tool Dependencies\n ├─ [3] Wipe/Uninstall Binary Tools\n ├─ [4] Upgrade Upstream Binaries\n └─ [//] Back")
+                print(f" {GRAY}├─ [1] Change Execution Directory Path\n ├─ [2] Deploy/Reinstall Tool Dependencies\n ├─ [3] Wipe/Uninstall Binary Tools\n ├─ [4] Update Upstream Binaries\n └─ [//] Back")
                 s = input(f"\n {CYAN}>> Command: {RESET}").strip().lower()
                 if s == '//': break
                 elif s == '1': 
@@ -585,7 +717,7 @@ def run_prism():
                 
             render_ui("File Selector System Activated", current_path)
             print(f" {CYAN}>> Waiting for input from native system file explorer dialog UI...{RESET}")
-            target_file = select_file()
+            target_file = select_file(title="Select Media Source File")
             if not target_file: continue
             
             target_file = os.path.abspath(target_file)
@@ -597,17 +729,17 @@ def run_prism():
                 
                 print(f" {BOLD}OPERATIONAL ATTACK ACTIONS MATRIX{RESET}")
                 print(f" {GRAY}├─ [1] Full Container Transcode Engine (Codecs/Format Modification)")
-                print(f" {GRAY}├─ [2] Batch Stream Extraction System (Isolate Single/Multiple Tracks)")
-                print(f" {GRAY}├─ [3] Add Muxed Subtitle Stream Overlay")
-                print(f" {GRAY}├─ [4] Metadata Inspector & Stream Track Renaming Suite [Multi-Pass Staging]")
-                print(f" {GRAY}├─ [5] Batch Stream Purge System (Remove Multiple Tracks Simultaneously)")
+                print(f" {GRAY}├─ [2] Stream Extraction System (Isolate Single/Multiple Tracks)")
+                print(f" {GRAY}├─ [3] Multi-Asset Track Multiplexer Engine (Add Video/Audio/Subs)")
+                print(f" {GRAY}├─ [4] Metadata Inspector [Multi-Pass Staging]")
+                print(f" {GRAY}├─ [5] Stream Purge System (Remove Multiple Tracks Simultaneously)")
                 print(f" {GRAY}└─ [//] De-select File and Go Back")
                 
                 op_choice = input(f"\n {CYAN}>> Action: {RESET}").strip().lower()
                 if op_choice == '//': break
                 elif op_choice == '1': run_conversion(target_file, current_path)
                 elif op_choice == '2': extract_tracks(target_file, metadata, current_path)
-                elif op_choice == '3': add_subtitle_track(target_file, current_path)
+                elif op_choice == '3': advanced_track_multiplexer(target_file, metadata, current_path)
                 elif op_choice == '4': manage_metadata_and_renaming(target_file, metadata, current_path)
                 elif op_choice == '5': remove_tracks_batch(target_file, metadata, current_path)
                 else: invalid_msg()
