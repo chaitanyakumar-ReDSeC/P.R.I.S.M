@@ -42,6 +42,12 @@ AUDIO_CODECS = {
     "4": ("Copy (No Re-encoding)", "copy")
 }
 
+SUBTITLE_CODECS = {
+    "1": ("SubRip (Standard Plain Text - Highly Compatible)", "subrip"),
+    "2": ("Advanced SubStation Alpha (Retains Styles/Fonts)", "ass"),
+    "3": ("Copy (Preserve Original Subtitle Stream Natively)", "copy")
+}
+
 def check_dependency(name):
     """Verifies if a specific system tool is installed and available in PATH."""
     return shutil.which(name) is not None
@@ -206,19 +212,24 @@ def resolve_output_path(source_file, target_dir, default_basename, extension):
 
 def run_conversion(input_file, current_path):
     """Handles full container transcode pipelines via customizable profiles."""
-    render_ui("Transcode Mode | Selecting Profiling Matrix", current_path)
+    render_ui("Transcode Engine | Selecting Video Pipelines", current_path)
     v_codec = get_selection(VIDEO_CODECS, "Video Codec")
     if v_codec == "BACK": return
     
-    render_ui("Transcode Mode | Selecting Audio Pipelines", current_path)
+    render_ui("Transcode Engine | Selecting Audio Pipelines", current_path)
     a_codec = get_selection(AUDIO_CODECS, "Audio Codec")
     if a_codec == "BACK": return
+
+    # --- ADDED: Subtitle Interception Step ---
+    render_ui("Transcode Engine | Selecting Subtitle Pipelines", current_path)
+    s_codec = get_selection(SUBTITLE_CODECS, "Subtitle Codec")
+    if s_codec == "BACK": return
     
-    render_ui("Transcode Mode | Configuring Container Format", current_path)
+    render_ui("Transcode Engine | Configuring Container Format", current_path)
     target_ext = get_target_extension(input_file)
     if target_ext == "BACK": return
 
-    render_ui("Transcode Mode | Finalizing Target Filename", current_path)
+    render_ui("Transcode Engine | Finalizing Target Filename", current_path)
     src_basename = os.path.splitext(os.path.basename(input_file))[0]
     print(f" {GRAY}Leave blank/Press Enter to auto-default to source name: '{src_basename}'{RESET}")
     out_name = input(f" {CYAN}Target filename (// to back):\n >> {RESET}").strip()
@@ -229,7 +240,9 @@ def run_conversion(input_file, current_path):
         out_name = out_name[:-len(target_ext)]
 
     final_path = resolve_output_path(input_file, current_path, out_name, target_ext)
-    cmd = ['ffmpeg', '-hide_banner', '-i', input_file, '-c:v', v_codec, '-c:a', a_codec, '-y', final_path]
+    
+    # --- UPDATED: Appended the '-c:s' argument mapping parameter ---
+    cmd = ['ffmpeg', '-hide_banner', '-i', input_file, '-c:v', v_codec, '-c:a', a_codec, '-c:s', s_codec, '-y', final_path]
     
     print(f"\n {CYAN}>> Initializing Transcoding Processing Pipeline...{RESET}\n")
     res = subprocess.run(cmd)
@@ -304,7 +317,7 @@ def advanced_track_multiplexer(video_file, source_metadata, current_path):
     current_destination_index = len(source_streams)
 
     while True:
-        render_ui("Muxing Engine | Multi-Asset Track Multiplexer", current_path)
+        render_ui("Multiplexer Engine | Multi-Asset Track Multiplexer", current_path)
         print(f" {BOLD}SOURCE MATRIX STATE:{RESET}")
         print(f" {GRAY}├─ Primary Target Source: {WHITE}{os.path.basename(video_file)}")
         print(f" {GRAY}└─ Base Stream Count:     {WHITE}{len(source_streams)} tracks")
@@ -320,7 +333,7 @@ def advanced_track_multiplexer(video_file, source_metadata, current_path):
         else:
             print(f"\n {GRAY}No external assets currently queued for attachment.{RESET}")
             
-        print("\n" + f" {BOLD}MULTIPLEXER OPERATIONS:{RESET}")
+        print("\n" + f" {BOLD}MULTIPLEXER ACTIONS:{RESET}")
         print(f" {GRAY}├─ [1] Choose & Stage External File Asset (Video / Audio / Subtitle)")
         print(f" {GREEN}├─ [G] DISPATCH MULTIPLEX ENGINE PIPELINE (Mux and Write Options){RESET}")
         print(f" {GRAY}└─ [//] Cancel Operations and Revert Back")
@@ -330,7 +343,7 @@ def advanced_track_multiplexer(video_file, source_metadata, current_path):
             break
             
         elif choice == '1':
-            render_ui("Multiplexer | Selection Interception System", current_path)
+            render_ui("Multiplexer Engine | Selection Interception System", current_path)
             print(f" {CYAN}>> Activating file explorer dialog... Choose track asset.{RESET}")
             asset_path = select_file(title="Select Asset Track to Merge")
             if not asset_path: continue
@@ -349,7 +362,7 @@ def advanced_track_multiplexer(video_file, source_metadata, current_path):
                     time.sleep(2)
                     continue
                 
-            render_ui("Multiplexer | Inspecting Track Components", current_path)
+            render_ui("Multiplexer Engine | Inspecting Track Components", current_path)
             print(f" {BOLD}Target Asset: {WHITE}{os.path.basename(asset_path)}{RESET}\n")
             print_stream_table(asset_streams)
             
@@ -416,11 +429,11 @@ def advanced_track_multiplexer(video_file, source_metadata, current_path):
                 time.sleep(1.5)
                 continue
                 
-            render_ui("Muxing Engine | Formatting Container Extension", current_path)
+            render_ui("Multiplexer Engine | Formatting Container Extension", current_path)
             target_ext = get_target_extension(video_file)
             if target_ext == "BACK": continue
             
-            render_ui("Muxing Engine | Resolving Output Filename Target", current_path)
+            render_ui("Multiplexer Engine | Resolving Output Filename Target", current_path)
             src_basename = os.path.splitext(os.path.basename(video_file))[0]
             print(f" {GRAY}Leave blank/Press Enter to auto-default to source name: '{src_basename}'{RESET}")
             out_name = input(f"\n {CYAN}Target output filename base:\n >> {RESET}").strip()
@@ -486,7 +499,7 @@ def manage_metadata_and_renaming(input_file, metadata, current_path):
     staged_track_langs = {}   
 
     while True:
-        render_ui("Metadata Suite | Advanced Staging Framework", current_path)
+        render_ui("Metadata Editor Engine | Advanced Staging Framework", current_path)
         streams = metadata.get('streams', [])
         format_info = metadata.get('format', {})
         global_title = format_info.get('tags', {}).get('title', 'None')
@@ -533,6 +546,7 @@ def manage_metadata_and_renaming(input_file, metadata, current_path):
             
         elif choice == '1':
             render_ui("Staging | Global Container Title", current_path)
+            print(f" {GRAY}├─ Current Title: {WHITE}{global_title}")
             t_input = input(f" {CYAN}Enter target Global Title string (// to back):\n >> {RESET}").strip()
             if t_input == '//': continue
             staged_global_title = t_input
@@ -582,7 +596,7 @@ def manage_metadata_and_renaming(input_file, metadata, current_path):
                 time.sleep(1.5)
                 continue
                 
-            render_ui("Metadata Suite | Constructing Dispatch Pipeline", current_path)
+            render_ui("Metadata Editor Engine | Constructing Dispatch Pipeline", current_path)
             target_ext = get_target_extension(input_file)
             if target_ext == "BACK": continue
             
@@ -621,7 +635,7 @@ def manage_metadata_and_renaming(input_file, metadata, current_path):
 
 def remove_tracks_batch(input_file, metadata, current_path):
     """Drops arbitrary arrays of elements simultaneously in one structural cycle."""
-    render_ui("Track Processing Engine | Purging Streams", current_path)
+    render_ui("Stream Purge Engine | Purging Streams", current_path)
     streams = metadata.get('streams', [])
     print_stream_table(streams)
 
@@ -641,11 +655,11 @@ def remove_tracks_batch(input_file, metadata, current_path):
         time.sleep(1.5)
         return
 
-    render_ui("Track Processing Engine | Configuring Container Format", current_path)
+    render_ui("Stream Purge Engine | Configuring Container Format", current_path)
     target_ext = get_target_extension(input_file)
     if target_ext == "BACK": return
 
-    render_ui("Track Processing Engine | Configuring Filename Parameters", current_path)
+    render_ui("Stream Purge Engine | Configuring Filename Parameters", current_path)
     src_basename = os.path.splitext(os.path.basename(input_file))[0]
     print(f" {GRAY}Leave blank/Press Enter to auto-default to source name: '{src_basename}'{RESET}")
     out_name = input(f" {CYAN}Output container label (// to back):\n >> {RESET}").strip()
@@ -678,8 +692,8 @@ def run_prism():
 
     while True:
         render_ui("IDLE | Awaiting Target File Selection", current_path)
-        print(f" {BOLD}MAIN ROUTER CONTROLLER MENU{RESET}")
-        print(f" {GRAY}├─ [1] Choose Target File Source\n ├─ [2] Settings and Configurations\n └─ [E] Terminate Session")
+        print(f" {BOLD}MAIN MENU{RESET}")
+        print(f" {GRAY}├─ [1] Choose Media File Source\n ├─ [2] Settings and Configurations\n └─ [E] Terminate Session")
         
         main_choice = input(f"\n {CYAN}>> Choice: {RESET}").strip().lower()
         if main_choice == 'e':
@@ -690,7 +704,7 @@ def run_prism():
             while True:
                 render_ui("SETTINGS AND CONFIGURATIONS", current_path)
                 print(f" {BOLD}SETTINGS FRAMEWORK MENU{RESET}")
-                print(f" {GRAY}├─ [1] Change Execution Directory Path\n ├─ [2] Deploy/Reinstall Tool Dependencies\n ├─ [3] Wipe/Uninstall Binary Tools\n ├─ [4] Update Upstream Binaries\n └─ [//] Back")
+                print(f" {GRAY}├─ [1] Change Destination Path\n ├─ [2] Install Modules\n ├─ [3] Uninstall Modules\n ├─ [4] Update Modules\n └─ [//] Back")
                 s = input(f"\n {CYAN}>> Command: {RESET}").strip().lower()
                 if s == '//': break
                 elif s == '1': 
@@ -727,13 +741,13 @@ def run_prism():
                 filename_short = os.path.basename(target_file)
                 render_ui(f"File Active | Track Source: {filename_short}", current_path)
                 
-                print(f" {BOLD}OPERATIONAL ATTACK ACTIONS MATRIX{RESET}")
-                print(f" {GRAY}├─ [1] Full Container Transcode Engine (Codecs/Format Modification)")
-                print(f" {GRAY}├─ [2] Stream Extraction System (Isolate Single/Multiple Tracks)")
-                print(f" {GRAY}├─ [3] Multi-Asset Track Multiplexer Engine (Add Video/Audio/Subs)")
-                print(f" {GRAY}├─ [4] Metadata Inspector [Multi-Pass Staging]")
-                print(f" {GRAY}├─ [5] Stream Purge System (Remove Multiple Tracks Simultaneously)")
-                print(f" {GRAY}└─ [//] De-select File and Go Back")
+                print(f" {BOLD}ACTIONS MENU{RESET}")
+                print(f" {GRAY}├─ [1] Convert Format (Change file codecs) - [Transcode Engine]")
+                print(f" {GRAY}├─ [2] Extract Tracks (Isolate raw streams) - [Extraction Engine]")
+                print(f" {GRAY}├─ [3] Merge Tracks (Add external streams) - [Multiplexer Engine]")
+                print(f" {GRAY}├─ [4] Edit Metadata (Modify stream tags) - [Metadata Editor Engine]")
+                print(f" {GRAY}├─ [5] Delete Tracks (Purge multiple streams) - [Stream Purge Engine]")
+                print(f" {GRAY}└─ [//] Close Action Menu and Return to Main Menu")
                 
                 op_choice = input(f"\n {CYAN}>> Action: {RESET}").strip().lower()
                 if op_choice == '//': break
